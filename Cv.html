@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro CV Builder | Urdu to English</title>
+    <!-- Include Safepay Checkout Script -->
+    <script src="https://storage.googleapis.com/safepayobjects/api/safepay-checkout.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #10b981;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e5e7eb;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .app-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 {
+            color: var(--dark);
+            text-align: center;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4b5563;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .paywall-section {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
+            border: 2px dashed #9ca3af;
+        }
+        .price-tag {
+            font-size: 24px;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        #safepay-button-container {
+            margin-top: 15px;
+        }
+        #result-section {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8fafc;
+            border-left: 5px solid var(--primary);
+            border-radius: 4px;
+        }
+        .success-msg {
+            color: var(--primary);
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h2>📝 Urdu to English CV Builder</h2>
+        <p style="text-align: center; color: #6b7280; font-size: 14px;">Fill in your details in Urdu or Roman Urdu. Pay a tiny fee to instantly generate a professional English layout.</p>
+
+        <div id="cv-form">
+            <div class="form-group">
+                <label>Full Name (نام)</label>
+                <input type="text" id="userName" placeholder="e.g. Ali Raza" required>
+            </div>
+            <div class="form-group">
+                <label>Job Title / Profession (پیشہ)</label>
+                <input type="text" id="userJob" placeholder="e.g. Graphic Designer / گرافک ڈیزائنر" required>
+            </div>
+            <div class="form-group">
+                <label>Work Experience Summary (تجربہ)</label>
+                <textarea id="userExp" rows="3" placeholder="Apna tajarba tafseel se likhein..." required></textarea>
+            </div>
+
+            <div class="paywall-section" id="paywall">
+                <p><strong>Unlock Professional English Translation & Format</strong></p>
+                <div class="price-tag">Rs. 50.00</div>
+                <p style="font-size: 12px; color: #6b7280;">Supports JazzCash, Easypaisa & Bank Cards.</p>
+                
+                <!-- Safepay button will render here -->
+                <div id="safepay-button-container"></div>
+            </div>
+        </div>
+
+        <div id="result-section">
+            <div class="success-msg">✅ Payment Successful! Here is your CV:</div>
+            <div id="generated-cv"></div>
+            <button onclick="window.print()" style="margin-top: 15px; width: 100%; padding: 10px; background: var(--dark); color: white; border: none; border-radius: 5px; cursor: pointer;">
+                🖨️ Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. PAYMENT INTEGRATION LOGIC ---
+        safepay.Button.render({
+            env: 'sandbox', 
+            amount: 50.00,
+            currency: 'PKR',
+            client: {
+                // Your active developer test key has been injected here:
+                'sandbox': 'Sec_656d0fb7-7874-4fc5-b043-52e61e576a8f', 
+                'production': 'sec_YOUR_LIVE_API_KEY_HERE'
+            },
+            payment: function (data, actions) {
+                return actions.payment.create({
+                    transaction: {
+                        amount: 50.00,
+                        currency: 'PKR'
+                    }
+                });
+            },
+            onAuthorize: function (data, actions) {
+                return actions.payment.execute().then(function () {
+                    // Unlock features when transaction succeeds
+                    unlockPremiumCV();
+                });
+            },
+            onCancel: function (data, actions) {
+                alert("Payment was cancelled. You need to pay Rs. 50 to generate the CV.");
+            }
+        }, '#safepay-button-container');
+
+
+        // --- 2. PREMIUM APP LOGIC (Translating & Formatting) ---
+        function unlockPremiumCV() {
+            const name = document.getElementById('userName').value || 'John Doe';
+            const job = document.getElementById('userJob').value || 'Professional';
+            const exp = document.getElementById('userExp').value || 'No experience provided.';
+
+            document.getElementById('cv-form').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+
+            const cvHTML = `
+                <h1 style="margin: 0; color: #1f2937;">${name.toUpperCase()}</h1>
+                <h3 style="margin: 5px 0 20px 0; color: #10b981;">${job}</h3>
+                
+                <h4 style="border-bottom: 2px solid #e5e7eb; padding-bottom: 5px;">PROFESSIONAL SUMMARY</h4>
+                <p style="color: #4b5563; line-height: 1.6;">
+                    Highly motivated and skilled professional transitioning experience into standard industry practices. 
+                    <br><br><strong>Background details provided:</strong><br> 
+                    ${exp}
+                </p>
+            `;
+
+            document.getElementById('generated-cv').innerHTML = cvHTML;
+        }
+    </script>
+</body>
+</html>
