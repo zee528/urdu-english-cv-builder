@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro CV Builder | Urdu to English</title>
-    <!-- Include Safepay Checkout Script -->
+    <!-- Safepay Checkout Script -->
     <script src="https://storage.googleapis.com/safepayobjects/api/safepay-checkout.min.js"></script>
     
     <style>
@@ -48,6 +48,212 @@
             width: 100%;
             padding: 10px;
             border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .paywall-section {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
+            border: 2px dashed #9ca3af;
+        }
+        .price-tag {
+            font-size: 24px;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        #safepay-button-container {
+            margin-top: 15px;
+        }
+        #result-section {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8fafc;
+            border-left: 5px solid var(--primary);
+            border-radius: 4px;
+        }
+        .success-msg {
+            color: var(--primary);
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .warning-msg {
+            color: #b45309;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h2>📝 Urdu to English CV Builder</h2>
+        <p style="text-align: center; color: #6b7280; font-size: 14px;">
+            Fill in your details in Urdu or Roman Urdu. Pay a tiny fee to instantly generate a professional English layout.
+        </p>
+
+        <div id="cv-form">
+            <div class="form-group">
+                <label>Full Name (نام)</label>
+                <input type="text" id="userName" placeholder="e.g. Ali Raza" required>
+            </div>
+            <div class="form-group">
+                <label>Job Title / Profession (پیشہ)</label>
+                <input type="text" id="userJob" placeholder="e.g. Graphic Designer / گرافک ڈیزائنر" required>
+            </div>
+            <div class="form-group">
+                <label>Work Experience Summary (تجربہ)</label>
+                <textarea id="userExp" rows="3" placeholder="Apna tajarba tafseel se likhein..." required></textarea>
+            </div>
+
+            <div class="paywall-section" id="paywall">
+                <p><strong>Unlock Professional English Translation & Format</strong></p>
+                <div class="price-tag">Rs. 50.00</div>
+                <p style="font-size: 12px; color: #6b7280;">Supports JazzCash, Easypaisa & Bank Cards.</p>
+                
+                <!-- Safepay button will render here -->
+                <div id="safepay-button-container"></div>
+                <p id="safepay-fallback" class="warning-msg" style="display: none;">
+                    Payment system is loading... If the button does not appear, please refresh the page.
+                </p>
+            </div>
+        </div>
+
+        <div id="result-section">
+            <div class="success-msg">✅ Payment Successful! Here is your CV:</div>
+            <div id="generated-cv"></div>
+            <button onclick="window.print()" style="margin-top: 15px; width: 100%; padding: 10px; background: var(--dark); color: white; border: none; border-radius: 5px; cursor: pointer;">
+                🖨️ Print / Save as PDF
+            </button>
+            <button id="resetBtn" style="margin-top: 8px; width: 100%; padding: 10px; background: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                ↩️ Start Over
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 0. Helper functions
+        // ==========================================
+        
+        /** Basic XSS sanitization */
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        /**
+         * Placeholder translation – replace with a real API call.
+         * For now it returns the original text to keep the app functional.
+         */
+        function translateToEnglish(urduText) {
+            // In production, call Google Translate API, DeepL, etc.
+            return urduText; // TODO: integrate real translation
+        }
+
+        // ==========================================
+        // 1. Safepay Integration
+        // ==========================================
+        
+        // Check if Safepay script loaded correctly
+        if (typeof safepay === 'undefined' || !safepay.Button) {
+            document.getElementById('safepay-fallback').style.display = 'block';
+            document.getElementById('safepay-button-container').innerHTML = 
+                '<p style="color:red;">⚠️ Payment system could not be loaded. Please refresh.</p>';
+        } else {
+            safepay.Button.render({
+                env: 'sandbox',
+                amount: 50.00,
+                currency: 'PKR',
+                client: {
+                    sandbox: 'sec_656d0fb7-7874-4fc5-b043-52e61e576a8f',   // Your sandbox key
+                    production: 'YOUR_LIVE_API_KEY_HERE'
+                },
+                // Validate inputs before opening the checkout
+                onClick: function() {
+                    const name = document.getElementById('userName').value.trim();
+                    const job  = document.getElementById('userJob').value.trim();
+                    const exp  = document.getElementById('userExp').value.trim();
+                    if (!name || !job || !exp) {
+                        alert('Please fill in all fields before proceeding with payment.');
+                        return false;   // stops the payment flow
+                    }
+                    return true;
+                },
+                payment: function(data, actions) {
+                    return actions.payment.create({
+                        amount: 50.00,
+                        currency: 'PKR'
+                    });
+                },
+                onAuthorize: function(data, actions) {
+                    return actions.payment.execute().then(function() {
+                        // Payment succeeded – unlock the premium CV
+                        unlockPremiumCV();
+                    });
+                },
+                onCancel: function(data, actions) {
+                    alert("Payment was cancelled. You need to pay Rs. 50 to generate the CV.");
+                }
+            }, '#safepay-button-container');
+        }
+
+        // ==========================================
+        // 2. CV Generation (after successful payment)
+        // ==========================================
+        function unlockPremiumCV() {
+            const name = document.getElementById('userName').value.trim();
+            const job  = document.getElementById('userJob').value.trim();
+            const exp  = document.getElementById('userExp').value.trim();
+
+            // Perform “translation”
+            const englishExp = translateToEnglish(exp);
+
+            // Hide form, show result
+            document.getElementById('cv-form').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+
+            // Build the CV HTML with proper escaping
+            const cvHTML = `
+                <h1 style="margin: 0; color: #1f2937;">${escapeHtml(name.toUpperCase())}</h1>
+                <h3 style="margin: 5px 0 20px 0; color: #10b981;">${escapeHtml(job)}</h3>
+                
+                <h4 style="border-bottom: 2px solid #e5e7eb; padding-bottom: 5px;">PROFESSIONAL SUMMARY</h4>
+                <p style="color: #4b5563; line-height: 1.6;">
+                    <strong>Original (Urdu/Roman Urdu):</strong><br>
+                    ${escapeHtml(exp)}
+                </p>
+                <p style="color: #2d3748; line-height: 1.6; margin-top: 15px;">
+                    <strong>English Translation:</strong><br>
+                    ${escapeHtml(englishExp)}
+                </p>
+            `;
+
+            document.getElementById('generated-cv').innerHTML = cvHTML;
+        }
+
+        // Reset everything back to the initial state
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('cv-form').style.display = 'block';
+            document.getElementById('result-section').style.display = 'none';
+            // Optionally clear fields (or leave them as they were)
+            // document.getElementById('userName').value = '';
+            // document.getElementById('userJob').value = '';
+            // document.getElementById('userExp').value = '';
+        });
+    </script>
+</body>
+    </html>            border: 1px solid #d1d5db;
             border-radius: 6px;
             box-sizing: border-box;
             font-family: inherit;
